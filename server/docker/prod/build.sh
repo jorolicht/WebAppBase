@@ -1,0 +1,37 @@
+#!/bin/bash
+
+
+mkdir -p wp_data
+mkdir -p db_data
+mkdir -p db_init
+mkdir -p logs
+sudo chown -R 33:33 wp_data
+sudo chown -R 999:999 db_init
+sudo chown -R 999:999 db_data
+
+sudo chmod -R 777 logs
+sudo chmod -R 775 wp_data
+sudo chmod -R 700 db_init
+
+
+echo "✅ Verzeichnisse erstellt und Berechtigungen gesetzt."
+
+# Pfad zur Environment-Datei bestimmen
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/.env"
+COMPOSE_FILE="$SCRIPT_DIR/docker-compose.yml"
+
+set -euo pipefail
+set -a                       # Schaltet "Auto-Export" ein
+source "$ENV_FILE"           # Liest die Datei ein und exportiert jede Zeile automatisch
+set +a                       # Schaltet "Auto-Export" wieder aus
+
+# Traefik ACME Zertifikatsspeicher vorbereiten (erfordert strikte 600 Rechte)
+if [ ! -f "$SCRIPT_DIR/acme.json" ]; then
+    touch "$SCRIPT_DIR/acme.json"
+fi
+chmod 600 "$SCRIPT_DIR/acme.json"
+
+docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --build
+
+echo "✅ Docker Images neu erstellt, Container gestartet."

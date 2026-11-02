@@ -1,0 +1,39 @@
+@import pages.Mockup.*
+@import cviews.helper.html.*
+@import base.Messages.gM
+
+@(itemId: String, title: String, icon: String, desc: String)
+
+<div class="container mt-4 mb-5" data-mockup="@itemId">
+    <div class="d-flex align-items-center gap-3 mb-3">
+        <i class="bi @if(icon.nonEmpty){@icon}else{bi-app} fs-2 text-primary"></i>
+        <h1 class="h3 fw-bold mb-0">@title</h1>
+        <span class="badge bg-warning text-dark">@gM("mockup.badge")</span>
+    </div>
+    <p class="text-muted">@if(desc.nonEmpty){@desc}else{@gM("mockup.defaultDesc")}</p>
+
+    <!-- Beispieldaten -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <span class="fw-bold">@gM("mockup.sampleData")</span>
+            <button class="btn btn-sm btn-primary" @id(BtnAction, "onclick")><i class="bi bi-plus-circle me-1"></i>@gM("mockup.action")</button>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead><tr><th>#</th><th>@gM("mockup.colName")</th><th>@gM("mockup.colStatus")</th><th>@gM("mockup.colDate")</th></tr></thead>
+                <tbody>
+                    @for(i <- 1 to 5) {
+                        <tr>
+                            <td>@i</td>
+                            <td>@title @i</td>
+                            <td><span class="badge @if(i % 2 == 0){bg-success}else{bg-secondary}">@if(i % 2 == 0){@gM("mockup.statusActive")}else{@gM("mockup.statusDraft")}</span></td>
+                            <td>2026-11-0@i</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <button class="btn btn-outline-secondary btn-sm mt-3" @id(BtnBack, "onclick")>@gM("btn.back")</button>
+</div>

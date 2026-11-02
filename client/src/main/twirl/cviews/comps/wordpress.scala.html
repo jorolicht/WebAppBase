@@ -1,0 +1,15 @@
+@import cviews.helper.html._
+@import pages.MainView
+@import comps.Wordpress.*  
+@import shared.MainIds.*
+
+@()
+<!-- Navbar wird durch Navbar-Komponente gerendert -->
+<div class="container-fluid mt-3">
+    <!-- Hauptinhalt -->
+    <div id="wordpress-main-content">
+        <div @id(ContentId) class="row">         
+            <div class="d-flex mt-2 mr-2 justify-content-center border border-secondary">Main Content</div>
+        </div>
+    </div>
+</div>

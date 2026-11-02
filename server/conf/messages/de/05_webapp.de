@@ -1,0 +1,30 @@
+
+###
+# Mockup-Seite (pages.Mockup)
+###
+mockup.badge                                        = Mockup
+mockup.defaultDesc                                  = Platzhalter: Diese Funktion ist noch nicht umgesetzt.
+mockup.notImplemented                               = Diese Aktion ist noch nicht umgesetzt.
+mockup.sampleData                                   = Beispieldaten
+mockup.action                                       = Neu
+mockup.colName                                      = Name
+mockup.colStatus                                    = Status
+mockup.colDate                                      = Datum
+mockup.statusActive                                 = Aktiv
+mockup.statusDraft                                  = Entwurf
+
+###
+# Verwaltung (pages.Management)
+###
+management.title                                    = Verwaltung
+management.accessDenied                             = Zugriff verweigert: Die Verwaltung steht nur Administratoren zur Verfügung.
+management.systemInfo                               = Systeminformationen
+management.clientVersion                            = Client-Version
+management.serverVersion                            = Play-Server-Version
+management.user                                     = Benutzer
+management.roles                                    = Rollen
+management.lang                                     = Sprache
+management.wsTest                                   = WebSocket-Test
+management.wsChannel                                = Kanal
+management.wsConnect                                = Verbinden
+management.wsSend                                   = Senden

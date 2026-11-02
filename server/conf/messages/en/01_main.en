@@ -1,0 +1,116 @@
+
+###
+# Message Entries
+###
+app.greeting                                        = Welcome!
+app.title                                           = Playframework Example Program
+app.lang                                            = en
+app.javascript                                      = Please enable Javascript.  
+app.test                                            = Test @$§%&/()öäü€ {0} {1}
+app.noAccount                                       = Don't have an account?
+app.createOne                                       = Create One
+app.forgotPassword                                  = Forgot Password?
+app.password                                        = Password
+app.emailAddress                                    = E-Mail Address
+app.invalid.password                                = Password is required / invalid
+app.invalid.email                                   = Email is invalid
+app.btn.login                                       = LOGIN
+app.btn.logout                                      = LOGOUT
+app.btn.console                                     = CONSOLE
+
+###
+# Navbar
+###
+navbar.logoAlt                                      = Logo
+navbar.toggleNav                                    = Toggle navigation
+navbar.profilePasskeys                              = Profile / Passkeys
+navbar.logout                                       = Logout
+navbar.login                                        = Login
+navbar.management                                   = Management
+
+###
+# Buttons & Breadcrumbs
+###
+btn.back                                            = Back
+btn.backToHome                                      = Back to Home
+btn.backToOverview                                  = Back to Overview
+btn.backToCompetition                               = Back to Competition
+btn.cancel                                          = Cancel
+btn.edit                                            = Edit
+btn.delete                                          = Delete
+btn.saveLeave                                       = Save/Leave
+btn.send                                            = Send
+breadcrumb.home                                     = Home
+
+###
+# MainView Landing
+###
+mainView.newsLabel                                  = New
+
+###
+# Loading & PageNotFound
+###
+loading.spinner                                     = Loading...
+loading.content                                     = Loading content for '{0}'...
+pageNotFound.title                                  = Page Not Found
+pageNotFound.desc                                   = The requested page ('{0}') could not be loaded or does not exist.
+pageNotFound.details                                = Details: {0}
+
+###
+# Certificate & Preview
+###
+btn.print                                           = Print
+
+###
+# UserLogin & UserRegistration
+###
+login.accountInfo                                   = Account Info
+login.title                                         = Sign In
+login.loggedInAs                                    = Logged in as:
+login.loggedInSince                                 = Logged in since:
+login.loggedInDesc                                  = You are successfully authenticated and can use all account features.
+login.btnAddPasskey                                 = Add Passkey
+login.btnDeletePasskey                                 = Delete Passkey
+login.btnLogout                                     = LOGOUT
+login.successAlert                                  = Login successful! Redirecting...
+login.email                                         = Email Address
+login.password                                      = Password
+login.btnLogin                                      = LOGIN
+login.btnPasskey                                    = LOGIN WITH PASSKEY
+login.forgotPassword                                = Forgot password?
+login.noAccount                                     = No account yet?
+login.registerNow                                   = Register now
+reg.title                                           = Create New Account
+reg.email                                           = Email Address
+reg.password                                        = Password (min. 8 characters)
+reg.btnSubmit                                       = Register & Send Verification Email
+
+###
+# Goodbye Page
+###
+goodbye.title                                       = Goodbye!
+goodbye.subtitle                                    = You have been successfully logged out.
+goodbye.info                                        = Thank you for your visit. We hope to see you again soon.
+
+###
+# Footer
+###
+footer.tagline                                      = Template for web applications based on WordPress.
+
+###
+# DlgCompetition
+###
+btn.save                                            = Save
+
+###
+# StageLayout
+###
+
+footer.realizedWith                                 = Realized with Scala.js & WordPress.
+footer.followUs                                     = Follow us on {0}
+
+# Meldungsdialog: Fehleranzeige (DlgMsgbox.showError)
+msgbox.errorTitle                                   = Error
+msgbox.details                                      = Details
+msgbox.code                                         = Code:
+msgbox.callStack                                    = CallStack:

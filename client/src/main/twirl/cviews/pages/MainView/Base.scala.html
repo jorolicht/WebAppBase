@@ -1,0 +1,78 @@
+@import pages.MainView.*
+@import cviews.helper.html.*
+@import base.Messages.gM
+@import base.Global
+@import shared.model.AppConfig
+
+@(config: AppConfig)
+
+<div class="main-multi-landing">
+    <!-- Hero: Überschrift, Untertitel, Beschreibung aus config/app.json ("hero") -->
+    <div class="hero-section text-white d-flex align-items-center justify-content-center text-center shadow-sm">
+        <div class="hero-overlay"></div>
+        <div class="hero-content px-3 py-3" style="z-index: 2;">
+            @config.hero.lift(0).map { t => <h1 class="h2 fw-bold mb-1 hero-title-custom">@t.get(Global.lang)</h1> }
+            @config.hero.lift(1).map { t => <p class="lead mb-1 fs-6">@t.get(Global.lang)</p> }
+            @config.hero.lift(2).map { t => <p class="small opacity-75 mx-auto mb-0" style="max-width: 600px;">@t.get(Global.lang)</p> }
+        </div>
+    </div>
+
+    <!-- News-Zeile: neuester Eintrag der Versionshistorie (wird nach dem Laden eingeblendet) -->
+    <div @id(NewsBarId) class="news-status-bar bg-light border-bottom py-2 px-3 shadow-sm d-none">
+        <div class="container d-flex align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center flex-wrap gap-2 small">
+                <span class="badge bg-primary"><i class="bi bi-megaphone-fill me-1"></i>@gM("mainView.newsLabel")</span>
+                <a href="@staticUrl("history")" onclick="appLoadPage('MainView', 'history'); return false;" class="fw-bold text-primary text-decoration-none" id="MainView_NewsVersion"></a>
+                <span class="text-muted" id="MainView_NewsDate"></span>
+                <a href="@staticUrl("history")" onclick="appLoadPage('MainView', 'history'); return false;" class="text-dark text-decoration-none" id="MainView_NewsSummary"></a>
+            </div>
+            <button type="button" class="btn-close" style="font-size: 0.7rem;" aria-label="Close" @id(BtnCloseNews, "onclick")></button>
+        </div>
+    </div>
+
+    <!-- Karten aus config/app.json ("cards"); Farbe von Icon und Button aus "color" -->
+    <div class="container mt-4 pb-4">
+        <div class="row g-4 justify-content-center">
+            @for(card <- config.cards) {
+                @defining(s"background-color: ${card.color}; color: ${comps.Actions.textColor(card.color)};") { colorStyle =>
+                <div class="col-lg-3 col-md-6">
+                    <div class="card h-100 border-0 shadow hover-lift">
+                        <div class="card-body text-center p-4 d-flex flex-column">
+                            <div class="feature-icon bg-gradient mb-3 mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; @colorStyle">
+                                <i class="bi @card.icon fs-3"></i>
+                            </div>
+                            <h3 class="h4 mb-3">@card.title.get(Global.lang)</h3>
+                            <p class="text-muted small">@card.desc.get(Global.lang)</p>
+                            <button class="btn btn-mv mt-auto fw-bold" style="@colorStyle" @id(shared.DomTypes.HtmlId(s"MainView_$CardPrefix${card.id}"), "onclick")>@card.btn.get(Global.lang)</button>
+                        </div>
+                    </div>
+                </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .hero-section {
+        position: relative;
+        min-height: 18vh;
+        background-color: #336699;
+        overflow: hidden;
+    }
+    .hero-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(135deg, rgba(51, 102, 153, 0.95) 0%, rgba(51, 102, 153, 0.7) 100%);
+    }
+    .hero-title-custom {
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    .hover-lift {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    .hover-lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 1rem 3rem rgba(0,0,0,0.175) !important;
+    }
+</style>

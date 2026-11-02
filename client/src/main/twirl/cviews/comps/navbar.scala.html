@@ -1,0 +1,113 @@
+@import shared.DomTypes.HtmlId
+@import cviews.helper.html.*
+@import comps.Navbar.*
+@import comps.Actions
+@import base.Global
+@import shared.model.MenuItem
+
+@(menu: Seq[MenuItem])
+
+@* Link eines Menüeintrags: href für statische Seiten/externe Links, Aktion über appEvent (ID Navbar_Menu-<id>) *@
+@menuLink(item: MenuItem, cssClass: String) = {
+    <a class="@cssClass" id="Navbar_@MenuPrefix@item.id" href="@Actions.href(item.action)"
+       @if(Actions.isExternal(item.action)){target="_blank" rel="noopener noreferrer"}else{onclick="window.appEvent(this, event); return false;"}>
+        @if(item.icon.nonEmpty){<i class="bi @item.icon me-1"></i>}@item.label.get(Global.lang)
+    </a>
+}
+
+<style>
+    .navbar-custom {
+        background-color: #336699 !important;
+    }
+    .navbar-brand-large {
+        font-size: 1.5rem !important;
+    }
+    .nav-link-bold {
+        font-weight: 700 !important;
+    }
+</style>
+
+<nav class="navbar navbar-expand-lg navbar-dark navbar-custom shadow-sm sticky-top">
+    <div class="container-fluid">
+        <!-- Logo und Titel -->
+        <a class="navbar-brand d-flex align-items-center navbar-brand-large" href="@pages.MainView.staticUrl("")" onclick="appLoadPage('MainView', ''); return false;">
+            <img src="@{Global.imgUrl}logo.png" alt="@gM("navbar.logoAlt")" width="47" height="47" class="d-inline-block align-text-top me-2">
+            <span class="fw-bold">@Global.appConfig.brand.get(Global.lang)</span>
+        </a>
+
+        <!-- Burger Icon für Mobile -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="@gM("navbar.toggleNav")">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarMain">
+            <!-- Linke Seite: Menü aus config/app.json -->
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                @for(item <- menu if Global.isVisible(item.visible)) {
+                    @if(item.children.isEmpty) {
+                        <li class="nav-item">@menuLink(item, "nav-link nav-link-bold")</li>
+                    } else {
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle nav-link-bold" href="#" id="Navbar_Dropdown-@item.id" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                @if(item.icon.nonEmpty){<i class="bi @item.icon me-1"></i>}@item.label.get(Global.lang)
+                            </a>
+                            <ul class="dropdown-menu shadow" aria-labelledby="Navbar_Dropdown-@item.id">
+                                @for(child <- item.children if Global.isVisible(child.visible)) {
+                                    <li>@menuLink(child, "dropdown-item")</li>
+                                }
+                            </ul>
+                        </li>
+                    }
+                }
+            </ul>
+
+            <!-- Rechte Seite: Sprache, Verwaltung, Benutzer -->
+            <ul class="navbar-nav align-items-center">
+                <!-- Sprachumschalter: Gegenstück-URL (/preise/ <-> /en/pricing/), Wahl wird gemerkt -->
+                <li class="nav-item me-3 small text-nowrap" id="Navbar_LangSwitch">
+                    @for((lang, label) <- Seq("de" -> "DE", "en" -> "EN")) {
+                        @if(lang == "en") {<span class="text-white-50">|</span>}
+                        <a class="text-decoration-none @if(Global.lang == lang){text-white fw-bold}else{text-white-50}" hreflang="@lang"
+                           href="@pages.MainView.langSwitchUrl(lang)" onclick="appSwitchLang('@lang'); return false;">@label</a>
+                    }
+                </li>
+
+                @if(Global.isAdmin) {
+                    <li class="nav-item me-3">
+                        <a class="nav-link d-flex align-items-center nav-link-bold text-white" href="javascript:appLoadPage('Management', '')" id="navbarManagement">
+                            <i class="bi bi-sliders me-1"></i>
+                            @gM("navbar.management")
+                        </a>
+                    </li>
+                }
+
+                @if(Global.user.isDefined) {
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center nav-link-bold" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle fs-5 me-2"></i>
+                            @Global.user.get.username
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="javascript:appLoadPage('UserLogin', '')">@gM("navbar.profilePasskeys")</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" @id(DoLogoutId, "onclick")>@gM("navbar.logout")</a></li>
+                        </ul>
+                    </li>
+                } else {
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light btn-sm fw-bold" href="javascript:appLoadPage('UserLogin', '')">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> @gM("navbar.login")
+                        </a>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</nav>
+@if(Global.showLangHint) {
+<!-- Hinweis für englischsprachige Besucher einer deutschen Seite (bewusst englisch) -->
+<div class="bg-light border-bottom small py-1 px-3 d-flex justify-content-center align-items-center gap-2" id="Navbar_LangHint">
+    <span>This page is also available in <a href="@pages.MainView.langSwitchUrl("en")" hreflang="en" onclick="appSwitchLang('en'); return false;">English</a>.</span>
+    <button type="button" class="btn-close" style="font-size: 0.6rem;" aria-label="Close" onclick="appSwitchLang('de')"></button>
+</div>
+}

@@ -1,0 +1,50 @@
+@import pages.Management.*
+@import cviews.helper.html.*
+@import base.Messages.gM
+@import base.Global
+@import shared.model.User
+
+@(user: Option[User])
+
+<div class="container mt-4 mb-5">
+    <h1 class="h3 fw-bold mb-4"><i class="bi bi-sliders me-2"></i>@gM("management.title")</h1>
+
+    <div class="row g-4">
+        <!-- Systeminformationen -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white fw-bold">@gM("management.systemInfo")</div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tr><th>@gM("management.clientVersion")</th><td>@shared.AppVersion.version</td></tr>
+                        <tr><th>@gM("management.serverVersion")</th><td @id(ServerVersionId)>…</td></tr>
+                        <tr><th>@gM("management.user")</th><td>@user.map(u => s"${u.username} (${u.email})").getOrElse("-")</td></tr>
+                        <tr><th>@gM("management.roles")</th><td>@user.map(_.roles.mkString(", ")).getOrElse("-")</td></tr>
+                        <tr><th>@gM("management.lang")</th><td>@Global.lang</td></tr>
+                        <tr><th>Home URL</th><td>@Global.homeUrl</td></tr>
+                        <tr><th>Play URL</th><td>@if(Global.playUrl.nonEmpty){@Global.playUrl}else{/srv}</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- WebSocket-Test über den Play-Server -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white fw-bold">@gM("management.wsTest")</div>
+                <div class="card-body">
+                    <div class="input-group input-group-sm mb-2">
+                        <span class="input-group-text">@gM("management.wsChannel")</span>
+                        <input type="text" class="form-control" @id(WsChannelId) value="test">
+                        <button class="btn btn-outline-primary" @id(BtnWsConnect, "onclick")>@gM("management.wsConnect")</button>
+                    </div>
+                    <div class="input-group input-group-sm mb-2">
+                        <input type="text" class="form-control" @id(WsMessageId) value="Hallo">
+                        <button class="btn btn-primary" @id(BtnWsSend, "onclick")>@gM("management.wsSend")</button>
+                    </div>
+                    <pre class="bg-light border rounded p-2 small mb-0" style="min-height: 120px;" @id(WsLogId)></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

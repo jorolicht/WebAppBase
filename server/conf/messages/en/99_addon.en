@@ -1,0 +1,6 @@
+
+###
+# Addon
+###
+addon.version       = WebAppBase debug console
+addon.footer        = For all other tricks, consult the source code!

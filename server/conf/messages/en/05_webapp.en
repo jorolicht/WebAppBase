@@ -1,0 +1,30 @@
+
+###
+# Mockup page (pages.Mockup)
+###
+mockup.badge                                        = Mockup
+mockup.defaultDesc                                  = Placeholder: this function is not implemented yet.
+mockup.notImplemented                               = This action is not implemented yet.
+mockup.sampleData                                   = Sample data
+mockup.action                                       = New
+mockup.colName                                      = Name
+mockup.colStatus                                    = Status
+mockup.colDate                                      = Date
+mockup.statusActive                                 = Active
+mockup.statusDraft                                  = Draft
+
+###
+# Management (pages.Management)
+###
+management.title                                    = Management
+management.accessDenied                             = Access denied: management is available to administrators only.
+management.systemInfo                               = System information
+management.clientVersion                            = Client version
+management.serverVersion                            = Play server version
+management.user                                     = User
+management.roles                                    = Roles
+management.lang                                     = Language
+management.wsTest                                   = WebSocket test
+management.wsChannel                                = Channel
+management.wsConnect                                = Connect
+management.wsSend                                   = Send

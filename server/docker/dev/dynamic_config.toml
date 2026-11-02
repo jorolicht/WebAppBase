@@ -1,0 +1,31 @@
+# Traefik-Konfiguration der Dev-Umgebung (Datei-Provider, siehe docker-compose.yml)
+
+[[tls.certificates]]
+  certFile = "/etc/traefik/certs/local-cert.pem"
+  keyFile = "/etc/traefik/certs/local-key.pem"
+
+# WordPress: alle Pfade
+[http.routers.webapp-wordpress]
+  entryPoints = ["websecure"]
+  rule = "PathPrefix(`/`)"
+  service = "webapp-wordpress"
+  [http.routers.webapp-wordpress.tls]
+
+# Play-Server unter /srv (Präfix wird vor der Weiterleitung entfernt)
+[http.routers.webapp-playsrv]
+  entryPoints = ["websecure"]
+  rule = "PathPrefix(`/srv`)"
+  service = "webapp-playsrv"
+  middlewares = ["webapp-playsrv-strip"]
+  [http.routers.webapp-playsrv.tls]
+
+[http.middlewares.webapp-playsrv-strip.stripPrefix]
+  prefixes = ["/srv"]
+
+[http.services.webapp-wordpress.loadBalancer]
+  [[http.services.webapp-wordpress.loadBalancer.servers]]
+    url = "http://wordpress:80"
+
+[http.services.webapp-playsrv.loadBalancer]
+  [[http.services.webapp-playsrv.loadBalancer.servers]]
+    url = "http://playsrv:9500"

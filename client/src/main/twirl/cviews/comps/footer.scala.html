@@ -1,0 +1,40 @@
+@()
+@import comps.Footer.*
+<footer class="footer mt-auto py-4 bg-light border-top">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 mb-3 mb-md-0">
+                <h6 class="fw-bold">@base.Global.appConfig.brand.get(base.Global.lang)</h6>
+                <p class="small text-muted">@gM("footer.tagline")</p>
+            </div>
+            <div class="col-md-8 text-md-end">
+                @* Links auf die statischen Seiten mit "footer": true aus config/app.json *@
+                <ul class="list-inline mb-0">
+                    @for(sp <- base.Global.appConfig.staticPages.filter(_.footer)) {
+                        <li class="list-inline-item me-3"><a href="@pages.MainView.staticUrl(sp.file)" onclick="appLoadPage('MainView', '@sp.file'); return false;" class="text-decoration-none text-muted small">@sp.title.get(base.Global.lang)</a></li>
+                    }
+                </ul>
+                @* Social-Media-Buttons: nur Netzwerke mit konfiguriertem Link (.env SOCIAL_*_URL) *@
+                @defining(Seq(
+                    ("Facebook", "bi-facebook", base.Global.socialFacebook),
+                    ("X", "bi-twitter-x", base.Global.socialX),
+                    ("Instagram", "bi-instagram", base.Global.socialInstagram)
+                ).filter(_._3.nonEmpty)) { socials =>
+                    @if(socials.nonEmpty) {
+                        <div class="mt-2 footer-social">
+                            @for((label, icon, url) <- socials) {
+                                <a href="@url" target="_blank" rel="noopener noreferrer" class="text-muted text-decoration-none fs-5 ms-2"
+                                   title="@gM("footer.followUs", label)" aria-label="@gM("footer.followUs", label)" data-social="@label">
+                                    <i class="bi @icon"></i>
+                                </a>
+                            }
+                        </div>
+                    }
+                }
+                <div class="mt-2 text-muted" style="font-size: 0.75rem;">
+                    <a href="javascript:startConsole()" class="text-decoration-none text-muted">&copy;</a> 2026 @base.Global.appConfig.brand.get(base.Global.lang). @gM("footer.realizedWith")
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>

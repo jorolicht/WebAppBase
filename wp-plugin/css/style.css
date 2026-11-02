@@ -1,0 +1,15 @@
+/* Zielgenaues Ansprechen des Content-Bereichs */
+.entry-content {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* Falls du den Header auch beeinflussen willst */
+.wp-block-template-part.header {
+    margin-bottom: 0 !important;
+}
+
+/* Server-Inhalt generell ausblenden (sowohl auf dem Bildschirm als auch beim Drucken) */
+.entry-content > *:not(.webapp-spa-root):not(#Main_AppWrapper):not(#Main_ParamId):not(#Main_NavbarId):not(#Main_DynContentId) {
+    display: none !important;
+}

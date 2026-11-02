@@ -1,0 +1,116 @@
+
+###
+# Message Entries
+###
+app.greeting                                        = Herzlich Willkommen!
+app.title                                           = Playframework Beispiel Programm
+app.lang                                            = de
+app.javascript                                      = Javascript wird benötigt, ist jedoch deaktiviert.  
+app.test                                            = Test @$§%&/()öäü€ {0} {1}
+app.noAccount                                       = Bisher keine Kennung?
+app.createOne                                       = Kennung neu anlegen
+app.forgotPassword                                  = Passwort vergessen?
+app.password                                        = Passwort
+app.emailAddress                                    = E-Mail Adresse
+app.invalid.password                                = Passwort ungültig / erforderlich
+app.invalid.email                                   = E-Mail-Format ungültig
+app.btn.login                                       = LOGIN
+app.btn.logout                                      = LOGOUT
+app.btn.console                                     = CONSOLE
+
+###
+# Navbar
+###
+navbar.logoAlt                                      = Logo
+navbar.toggleNav                                    = Navigation umschalten
+navbar.profilePasskeys                              = Profil / Passkeys
+navbar.logout                                       = Abmelden
+navbar.login                                        = Login
+navbar.management                                   = Management
+
+###
+# Buttons & Breadcrumbs
+###
+btn.back                                            = Zurück
+btn.backToHome                                      = Zurück zur Startseite
+btn.backToOverview                                  = Zurück zur Übersicht
+btn.backToCompetition                               = Zurück zum Wettbewerb
+btn.cancel                                          = Abbrechen
+btn.edit                                            = Bearbeiten
+btn.delete                                          = Löschen
+btn.saveLeave                                       = Speichern/Verlassen
+btn.send                                            = Senden
+breadcrumb.home                                     = Startseite
+
+###
+# MainView Landing
+###
+mainView.newsLabel                                  = Neu
+
+###
+# Loading & PageNotFound
+###
+loading.spinner                                     = Lade...
+loading.content                                     = Lade Inhalt für '{0}'...
+pageNotFound.title                                  = Seite nicht gefunden
+pageNotFound.desc                                   = Die angeforderte Seite ('{0}') konnte nicht geladen werden oder existiert nicht.
+pageNotFound.details                                = Details: {0}
+
+###
+# Certificate & Preview
+###
+btn.print                                           = Drucken
+
+###
+# UserLogin & UserRegistration
+###
+login.accountInfo                                   = Account Info
+login.title                                         = Anmelden
+login.loggedInAs                                    = Angemeldet als:
+login.loggedInSince                                 = Eingeloggt seit:
+login.loggedInDesc                                  = Sie sind erfolgreich authentifiziert und können alle Funktionen Ihres Accounts nutzen.
+login.btnAddPasskey                                 = Passkey hinzufügen
+login.btnDeletePasskey                                 = Passkey löschen
+login.btnLogout                                     = ABMELDEN
+login.successAlert                                  = Anmeldung erfolgreich! Sie werden in Kürze weitergeleitet...
+login.email                                         = E-Mail-Adresse
+login.password                                      = Passwort
+login.btnLogin                                      = LOGIN
+login.btnPasskey                                    = MIT PASSKEY ANMELDEN
+login.forgotPassword                                = Passwort vergessen?
+login.noAccount                                     = Noch keinen Account?
+login.registerNow                                   = Jetzt registrieren
+reg.title                                           = Neuen Account erstellen
+reg.email                                           = E-Mail Adresse
+reg.password                                        = Passwort (min. 8 Zeichen)
+reg.btnSubmit                                       = Registrieren & Verifizierungsemail senden
+
+###
+# Goodbye Page
+###
+goodbye.title                                       = Auf Wiedersehen!
+goodbye.subtitle                                    = Sie wurden erfolgreich abgemeldet.
+goodbye.info                                        = Vielen Dank für Ihren Besuch. Wir hoffen, Sie bald wiederzusehen.
+
+###
+# Footer
+###
+footer.tagline                                      = Vorlage für Web-Anwendungen auf Basis von WordPress.
+
+###
+# DlgCompetition
+###
+btn.save                                            = Speichern
+
+###
+# StageLayout
+###
+
+footer.realizedWith                                 = Realisiert mit Scala.js & WordPress.
+footer.followUs                                     = Folgen Sie uns auf {0}
+
+# Meldungsdialog: Fehleranzeige (DlgMsgbox.showError)
+msgbox.errorTitle                                   = Fehler
+msgbox.details                                      = Details
+msgbox.code                                         = Code:
+msgbox.callStack                                    = CallStack:

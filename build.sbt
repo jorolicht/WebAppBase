@@ -1,0 +1,643 @@
+import scala.sys.process._ 
+
+// Global / scalaJSStage := FullOptStage
+
+def getAppEnv: String = {
+  sys.props.get("app.env").orElse(sys.env.get("APP_ENV")).getOrElse("prod")
+}
+
+def getDockerDir(base: File, env: String): File = {
+  if (env == "prod") base / "docker" / "prod"
+  else base / "docker" / "dev"
+}
+
+/**
+ * Liest einen Wert aus der Umgebung bzw. aus server/docker/<env>/.env (inkl. ${VAR}-Interpolation).
+ *
+ * @param base Projekt-Wurzelverzeichnis
+ */
+def getEnvValue(base: File, key: String, defaultVal: String): String = {
+  sys.env.get(key).orElse {
+    val env = getAppEnv
+    val envFile = getDockerDir(base / "server", env) / ".env"
+    if (envFile.exists()) {
+      val lines = IO.readLines(envFile)
+      val envMap = lines.flatMap { line =>
+        val trimmed = line.trim
+        if (trimmed.nonEmpty && !trimmed.startsWith("#")) {
+          val parts = trimmed.split("=", 2)
+          if (parts.length == 2) {
+            val k = parts(0).trim.stripPrefix("export ").trim
+            val v = parts(1).trim.stripPrefix("\"").stripSuffix("\"").stripPrefix("'").stripSuffix("'")
+            Some(k -> v)
+          } else None
+        } else None
+      }.toMap
+
+      envMap.get(key).map { rawVal =>
+        envMap.foldLeft(rawVal) { case (acc, (k, v)) =>
+          acc.replace(s"$${$k}", v)
+        }
+      }
+    } else None
+  }.getOrElse(defaultVal)
+}
+
+val includeAddon: Boolean  = true // always include addon for now, can be disabled later if needed
+val projectRootDir         = file(".")
+val appOrganization        = getEnvValue(projectRootDir, "APP_ORGANIZATION", "org.jorolicht")
+val appVersion             = getEnvValue(projectRootDir, "APP_VERSION", "0.1.0")
+val appDate                = getEnvValue(projectRootDir, "APP_DATE", "2026-11-02")
+val appMaintainer          = getEnvValue(projectRootDir, "APP_MAINTAINER", "Robert Lichtenegger <robert.lichtenegger@gmail.com>")
+/** Name (Slug) des WordPress-Plugins: Verzeichnis, Hauptdatei <slug>.php und ZIP-Name. */
+val pluginSlug             = "webapp"
+
+ThisBuild / scalaVersion := "3.3.7"
+ThisBuild / organization := appOrganization
+ThisBuild / version      := appVersion
+server / maintainer      := appMaintainer
+
+def getDockerWpPluginDir(base: File, env: String): File = {
+  getDockerDir(base, env) / "wp_data" / "wp-content" / "plugins" / pluginSlug
+}
+
+val dockerHubUser = "jorolich"
+/** Präfix der Docker-Images: <prefix>playsrv-image, <prefix>wp-cli-image, <prefix>wp-image. */
+val imagePrefix   = s"$pluginSlug-"
+val dockerPlatform = "linux/amd64"
+
+val dockerBuildPlaysrv = taskKey[Unit]("Builds webapp-playsrv-image Docker image for linux/amd64 and tags for Docker Hub user jorolich")
+val dockerPushPlaysrv  = taskKey[Unit]("Pushes webapp-playsrv-image Docker image to Docker Hub for user jorolich")
+
+val dockerBuildWpCli   = taskKey[Unit]("Builds webapp-wp-cli-image Docker image for linux/amd64 and tags for Docker Hub user jorolich")
+val dockerPushWpCli    = taskKey[Unit]("Pushes webapp-wp-cli-image Docker image to Docker Hub for user jorolich")
+
+val dockerBuildWp   = taskKey[Unit]("Builds webapp-wp-image Docker image for linux/amd64 and tags for Docker Hub user jorolich")
+val dockerPushWp    = taskKey[Unit]("Pushes webapp-wp-image Docker image to Docker Hub for user jorolich")
+
+val dockerBuildImages  = taskKey[Unit]("Builds the webapp-{playsrv,wp-cli,wp}-image Docker images for linux/amd64")
+val dockerPushImages   = taskKey[Unit]("Pushes the webapp-{playsrv,wp-cli,wp}-image Docker images to Docker Hub for user jorolich")
+
+lazy val root = (project in file("."))
+  .aggregate(server, client, shared.jvm, shared.js)
+  .settings(
+    packageWpPlugin := (server / packageWpPlugin).value
+  )
+
+val genMsgFiles = taskKey[Unit]("Generate Message Files")  
+val convertMessagesToJson = taskKey[Seq[File]]("Converts message files to JSON")
+
+lazy val syncClientWpFiles = taskKey[Unit]("Copies main.js and main.js.map to wordpress")
+val packageWpPlugin = taskKey[File]("Generates an installable WordPress plugin ZIP archive with SemVer version (<pluginSlug>-<version>.zip)")
+
+lazy val server = project
+  .settings(
+    Universal / stage := {
+      val stageDir = (Universal / stage).value   // erzeugt target/universal/stage
+
+      val log = streams.value.log
+      val env = getAppEnv
+      log.info(s"Staging for environment: $env")
+
+      val dockerDir = getDockerDir(baseDirectory.value, env)
+      val targetDir = dockerDir / "playsrv" / "stage"
+
+      // Zielverzeichnis sauber neu anlegen
+      IO.delete(targetDir)
+      IO.createDirectory(targetDir)
+
+      // komplettes stage-Verzeichnis kopieren
+      IO.copyDirectory(stageDir, targetDir, overwrite = true, preserveLastModified = true)
+
+      log.info(s"Copied staged distribution to ${targetDir.getAbsolutePath}")
+
+      stageDir
+    },
+    commands ++= Seq(hello, buildMsg),
+    genMsgFiles := {
+      val msgFileDe = baseDirectory.value  / "conf" / "messages.de"
+      val msgFileEn = baseDirectory.value  / "conf" / "messages.en"
+      val infoDe = baseDirectory.value  / "conf" / "messages" / "de" / "00_info.de"
+      val infoEn = baseDirectory.value  / "conf" / "messages" / "en" / "00_info.en"
+      IO.write(infoDe, s"""
+                        |app.version = ${appVersion}
+                        |app.date    = ${appDate}
+                        |app.lang    = DE
+                        |\n""".stripMargin)
+      IO.write(infoEn, s"""
+                        |app.version = ${appVersion}
+                        |app.date    = ${appDate}
+                        |app.lang    = EN
+                        |\n""".stripMargin)
+      val filesDe = (baseDirectory.value / "conf" / "messages" / "de" ** "*.de").get.sortBy(_.getName)
+      val filesEn = (baseDirectory.value / "conf" / "messages" / "en" ** "*.en").get.sortBy(_.getName)
+      IO.write(msgFileDe, filesDe.map(IO.read(_)).reduceLeft(_ ++ _))
+      IO.write(msgFileEn, filesEn.map(IO.read(_)).reduceLeft(_ ++ _))
+      println(s"Message files generated")
+    },
+    convertMessagesToJson := {
+      genMsgFiles.value // run genMsgFiles task first
+      val log = streams.value.log
+      val confDir = baseDirectory.value / "conf"
+      val targetDir = (Compile / resourceManaged).value / "messages"
+      IO.createDirectory(targetDir)
+      
+      val msgFiles = Seq(confDir / "messages.de", confDir / "messages.en")
+      
+      msgFiles.map { msgFile =>
+        log.info(s"Converting ${msgFile.getAbsolutePath} to JSON...")
+        if (s"msgConverter ${msgFile.getAbsolutePath}".! != 0) {
+          sys.error(s"msgConverter failed for $msgFile")
+        }
+        
+        val generatedFile = new File(msgFile.getAbsolutePath + "_json")
+        
+        log.info(s"Sorting ${generatedFile.getAbsolutePath} alphabetically...")
+        val lines = IO.readLines(generatedFile)
+        val entries = lines.flatMap { line =>
+          val cleanLine = line.trim
+          if (cleanLine.startsWith("\"") && cleanLine.contains("\": \"")) {
+            val idx = cleanLine.indexOf("\": \"")
+            val key = cleanLine.substring(1, idx)
+            val valueWithQuotes = cleanLine.substring(idx + 4)
+            val value = if (valueWithQuotes.endsWith(",")) {
+              valueWithQuotes.substring(0, valueWithQuotes.length - 2)
+            } else {
+              valueWithQuotes.substring(0, valueWithQuotes.length - 1)
+            }
+            Some((key, value))
+          } else {
+            None
+          }
+        }
+        
+        val sortedEntries = entries.sortBy(_._1)
+        val jsonLines = sortedEntries.map { case (k, v) =>
+          s"""  "$k": "$v""""
+        }
+        val sortedJsonContent = "{\n" + jsonLines.mkString(",\n") + "\n}"
+        
+        val lang = msgFile.name.split('.').last
+        val targetFileSrv  = baseDirectory.value / ".." / "server" / "public" / "data" / ("msgs_" + lang + ".json")
+        val targetFileWp   = baseDirectory.value / ".." / "wp-plugin" / "data" / ("msgs_" + lang + ".json")
+        val env            = getAppEnv
+        val targetFileDk   = getDockerWpPluginDir(baseDirectory.value, env) / "data" / ("msgs_" + lang + ".json")
+
+        IO.createDirectory(targetFileWp.getParentFile)
+        IO.createDirectory(targetFileSrv.getParentFile)
+        IO.createDirectory(targetFileDk.getParentFile)
+
+        IO.write(targetFileWp, sortedJsonContent)
+        IO.write(targetFileSrv, sortedJsonContent)
+        IO.write(targetFileDk, sortedJsonContent)
+        
+        log.info(s"Generated sorted JSON files at:")
+        log.info(s"  - ${targetFileWp.getAbsolutePath}")
+        log.info(s"  - ${targetFileSrv.getAbsolutePath}")
+        log.info(s"  - ${targetFileDk.getAbsolutePath}")
+        
+        targetFileSrv
+      }
+    },
+    Compile / resourceGenerators += convertMessagesToJson.taskValue,
+    watchSources ++= (baseDirectory.value / "conf" / "messages" / "de" ** "*.de").get,
+    watchSources ++= (baseDirectory.value / "conf" / "messages" / "en" ** "*.en").get,
+    scalaJSProjects := Seq(client),
+    Assets / pipelineStages  := Seq(scalaJSPipeline),
+    pipelineStages := Seq(digest, gzip),
+    Compile / compile := ((Compile / compile) dependsOn (scalaJSPipeline, syncClientWpFiles)).value,
+    
+    libraryDependencies += guice,
+    libraryDependencies += jdbc,
+    libraryDependencies += ws,
+    libraryDependencies += evolutions,
+    libraryDependencies += "com.mysql" % "mysql-connector-j" % "8.3.0",
+    libraryDependencies += "org.playframework.anorm" %% "anorm" % "2.7.0",
+    libraryDependencies += "com.vmunier" %% "scalajs-scripts" % "1.3.0",
+    libraryDependencies += "com.lihaoyi" %% "upickle" % "3.3.1",
+    libraryDependencies += "com.google.api-client" % "google-api-client" % "2.4.0",
+    libraryDependencies += "org.playframework" %% "play-mailer" % "10.0.0",
+    libraryDependencies += "org.playframework" %% "play-mailer-guice" % "10.0.0",
+    libraryDependencies += "org.typelevel" %% "cats-core" % "2.12.0",
+    libraryDependencies += "org.apache.pekko" %% "pekko-stream-typed" % "1.0.2",
+    libraryDependencies += "com.lihaoyi" %% "sourcecode" % "0.4.2",
+    syncClientWpFiles := {
+      (client / Compile / fastLinkJS).value
+      (client / Compile / fullLinkJS).value
+
+      val log = streams.value.log
+      val clientTargetDir = (client / Compile / fastLinkJS / scalaJSLinkerOutputDirectory).value
+      val clientCssSource = file("server/public/css") 
+
+      val wpJsDestination = file("wp-plugin/js")
+      val wpCssDestination = file("wp-plugin/css")
+      val env = getAppEnv
+      val dockerWpPluginDir = getDockerWpPluginDir(baseDirectory.value, env)
+
+      val wpJsDestination2 = dockerWpPluginDir / "js"
+      val wpCssDestination2 = dockerWpPluginDir / "css"
+
+      val wpPluginDir = baseDirectory.value / ".." / "wp-plugin"
+      val siteContentDir = baseDirectory.value / ".." / "site" / "content"
+      val siteDownloadDir = baseDirectory.value / ".." / "site" / "download"
+
+      if (siteContentDir.exists()) {
+        IO.copyDirectory(siteContentDir, wpPluginDir / "pages")
+      }
+      if (siteDownloadDir.exists()) {
+        IO.copyDirectory(siteDownloadDir, wpPluginDir / "download")
+      }
+
+      IO.copyDirectory(clientTargetDir, wpJsDestination)
+      IO.copyDirectory(clientCssSource, wpCssDestination)
+      IO.copyDirectory(clientTargetDir, wpJsDestination2)
+      IO.copyDirectory(wpCssDestination, wpCssDestination2)
+
+      IO.copyFile(wpPluginDir / s"$pluginSlug.php", dockerWpPluginDir / s"$pluginSlug.php")
+      IO.copyDirectory(wpPluginDir / "includes", dockerWpPluginDir / "includes")
+      IO.copyDirectory(wpPluginDir / "config", dockerWpPluginDir / "config")
+      IO.copyDirectory(wpPluginDir / "pages", dockerWpPluginDir / "pages")
+      if ((wpPluginDir / "img").exists()) {
+        IO.copyDirectory(wpPluginDir / "img", dockerWpPluginDir / "img")
+      }
+      if ((wpPluginDir / "font").exists()) {
+        IO.copyDirectory(wpPluginDir / "font", dockerWpPluginDir / "font")
+      }
+      if ((wpPluginDir / "download").exists()) {
+        IO.copyDirectory(wpPluginDir / "download", dockerWpPluginDir / "download")
+      }
+      if ((wpPluginDir / "vendor").exists()) {
+        IO.copyDirectory(wpPluginDir / "vendor", dockerWpPluginDir / "vendor")
+      }
+      if ((wpPluginDir / "composer.json").exists()) {
+        IO.copyFile(wpPluginDir / "composer.json", dockerWpPluginDir / "composer.json")
+      }
+      if ((wpPluginDir / "composer.lock").exists()) {
+        IO.copyFile(wpPluginDir / "composer.lock", dockerWpPluginDir / "composer.lock")
+      }
+      if ((wpPluginDir / "readme.txt").exists()) {
+        IO.copyFile(wpPluginDir / "readme.txt", dockerWpPluginDir / "readme.txt")
+      }
+      if ((wpPluginDir / "data").exists()) {
+        IO.copyDirectory(wpPluginDir / "data", dockerWpPluginDir / "data")
+        IO.copyDirectory(wpPluginDir / "data", baseDirectory.value / ".." / "server" / "public" / "data")
+      }
+
+      log.info("Copied files to wordpress (including php, includes, config and pages)")
+    },
+    packageWpPlugin := {
+      // 1. Abhängigkeiten auflösen: Messages konvertieren und FullOpt Scala.js kompilieren
+      convertMessagesToJson.value
+      (client / Compile / fullLinkJS).value
+
+      val log = streams.value.log
+      val rootDir = baseDirectory.value / ".."
+      val wpPluginDir = rootDir / "wp-plugin"
+      val clientOptDir = (client / Compile / fullLinkJS / scalaJSLinkerOutputDirectory).value
+      val clientCssSource = rootDir / "server" / "public" / "css"
+
+      // 2. Temporäres Staging-Verzeichnis vorbereiten (unter target/wordpress/stage/<pluginSlug>)
+      val stageBase = baseDirectory.value / "target" / "wordpress" / "stage"
+      val stagePluginDir = stageBase / pluginSlug
+
+      IO.delete(stageBase)
+      IO.createDirectory(stagePluginDir)
+
+      // 3. PHP-, Konfigurations- und Dokumentationsdateien kopieren
+      IO.copyFile(wpPluginDir / s"$pluginSlug.php", stagePluginDir / s"$pluginSlug.php")
+      if ((wpPluginDir / "readme.txt").exists()) {
+        IO.copyFile(wpPluginDir / "readme.txt", stagePluginDir / "readme.txt")
+      }
+      if ((wpPluginDir / "composer.json").exists()) {
+        IO.copyFile(wpPluginDir / "composer.json", stagePluginDir / "composer.json")
+      }
+      if ((wpPluginDir / "composer.lock").exists()) {
+        IO.copyFile(wpPluginDir / "composer.lock", stagePluginDir / "composer.lock")
+      }
+
+      // 4. Verzeichnisse kopieren
+      IO.copyDirectory(wpPluginDir / "includes", stagePluginDir / "includes")
+      IO.copyDirectory(wpPluginDir / "config", stagePluginDir / "config")
+      // pages direkt aus site/content, da wp-plugin/pages erst bei sbt compile aktualisiert wird
+      IO.copyDirectory(rootDir / "site" / "content", stagePluginDir / "pages")
+      if ((wpPluginDir / "img").exists()) {
+        IO.copyDirectory(wpPluginDir / "img", stagePluginDir / "img")
+      }
+      if ((wpPluginDir / "font").exists()) {
+        IO.copyDirectory(wpPluginDir / "font", stagePluginDir / "font")
+      }
+      if ((wpPluginDir / "download").exists()) {
+        IO.copyDirectory(wpPluginDir / "download", stagePluginDir / "download")
+      }
+      if ((wpPluginDir / "vendor").exists()) {
+        IO.copyDirectory(wpPluginDir / "vendor", stagePluginDir / "vendor")
+      }
+
+      // 5. CSS & Stylesheets einbinden
+      val stageCssDir = stagePluginDir / "css"
+      IO.createDirectory(stageCssDir)
+      if (clientCssSource.exists()) {
+        IO.copyDirectory(clientCssSource, stageCssDir)
+      }
+      if ((wpPluginDir / "css").exists()) {
+        IO.copyDirectory(wpPluginDir / "css", stageCssDir)
+      }
+
+      // 6. Produktions-optimiertes JavaScript (fullLinkJS) einbinden
+      val stageJsDir = stagePluginDir / "js"
+      IO.createDirectory(stageJsDir)
+      IO.copyDirectory(clientOptDir, stageJsDir)
+
+      // 7. Übersetzungen (JSON) einbinden
+      val stageDataDir = stagePluginDir / "data"
+      IO.createDirectory(stageDataDir)
+      if ((wpPluginDir / "data").exists()) {
+        IO.copyDirectory(wpPluginDir / "data", stageDataDir)
+      }
+
+      // 8. Bereinigung: Ausschluss von Entwicklungs- und OS-Artefakten (.DS_Store, ~, tmp, .git)
+      val allFiles = (stagePluginDir ** "*").get.filter(_.isFile)
+        .filterNot { f =>
+          val name = f.getName
+          name == ".DS_Store" || name.endsWith("~") || name.endsWith(".tmp") || name.startsWith(".git")
+        }
+
+      // 9. ZIP-Archiv unter target/wordpress/<pluginSlug>-<version>.zip erzeugen
+      val outDir = rootDir / "target" / "wordpress"
+      val rootTargetDir = rootDir / "target"
+      IO.createDirectory(outDir)
+      IO.createDirectory(rootTargetDir)
+
+      val zipBase = pluginSlug
+      val versionedZip = outDir / s"$zipBase-$appVersion.zip"
+      val unversionedZip = outDir / s"$zipBase.zip"
+      val rootVersionedZip = rootTargetDir / s"$zipBase-$appVersion.zip"
+
+      val zipMappings = allFiles.map { f =>
+        (f, IO.relativize(stageBase, f).get)
+      }
+
+      IO.delete(versionedZip)
+      IO.zip(zipMappings, versionedZip)
+      IO.copyFile(versionedZip, unversionedZip)
+      IO.copyFile(versionedZip, rootVersionedZip)
+
+      log.info(s"Created installable WordPress plugin ZIP archive (Version: $appVersion):")
+      log.info(s"  - ${versionedZip.getAbsolutePath}")
+      log.info(s"  - ${rootVersionedZip.getAbsolutePath}")
+      log.info(s"  - ${unversionedZip.getAbsolutePath}")
+
+      versionedZip
+    },
+    Universal / dist := {
+      val zipFile = (Universal / packageBin).value
+
+      val log = streams.value.log
+      val env = getAppEnv
+      val targetDir = getDockerDir(baseDirectory.value, env) / "playsrv"
+      IO.createDirectory(targetDir)
+
+      val targetFile = targetDir / zipFile.getName
+      IO.copyFile(zipFile, targetFile)
+
+      log.info(s"Copied ${zipFile.getName} to ${targetDir}")
+      zipFile
+    },
+    dockerBuildPlaysrv := {
+      (Universal / stage).value
+      val log = streams.value.log
+      val env = getAppEnv
+      val dockerDir = getDockerDir(baseDirectory.value, env)
+      val versionTag = s"$dockerHubUser/${imagePrefix}playsrv-image:$appVersion"
+      val latestTag = s"$dockerHubUser/${imagePrefix}playsrv-image:latest"
+
+      log.info(s"Building Docker image $versionTag for platform $dockerPlatform...")
+      val buildCmd = Process(
+        Seq(
+          "docker", "build",
+          "--platform", dockerPlatform,
+          "-t", versionTag,
+          "-t", latestTag,
+          "-f", (dockerDir / "playsrv" / "Dockerfile").getAbsolutePath,
+          (dockerDir / "playsrv").getAbsolutePath
+        )
+      )
+      if (buildCmd.! != 0) {
+        sys.error(s"Docker build failed for $versionTag")
+      }
+      log.info(s"Successfully built $versionTag and $latestTag")
+    },
+    dockerPushPlaysrv := {
+      dockerBuildPlaysrv.value
+      val log = streams.value.log
+      val versionTag = s"$dockerHubUser/${imagePrefix}playsrv-image:$appVersion"
+      val latestTag = s"$dockerHubUser/${imagePrefix}playsrv-image:latest"
+
+      log.info(s"Pushing $versionTag to Docker Hub...")
+      if (Process(Seq("docker", "push", versionTag)).! != 0) {
+        sys.error(s"Docker push failed for $versionTag")
+      }
+      log.info(s"Pushing $latestTag to Docker Hub...")
+      if (Process(Seq("docker", "push", latestTag)).! != 0) {
+        sys.error(s"Docker push failed for $latestTag")
+      }
+      log.info(s"Successfully pushed $versionTag and $latestTag")
+    },
+    dockerBuildWpCli := {
+      val log = streams.value.log
+      val env = getAppEnv
+      val dockerDir = getDockerDir(baseDirectory.value, env)
+      val versionTag = s"$dockerHubUser/${imagePrefix}wp-cli-image:$appVersion"
+      val latestTag = s"$dockerHubUser/${imagePrefix}wp-cli-image:latest"
+      val dockerfile = dockerDir / "wp-cli" / "Dockerfile"
+
+      log.info(s"Building Docker image $versionTag for platform $dockerPlatform...")
+      val buildCmd = Process(
+        Seq(
+          "docker", "build",
+          "--platform", dockerPlatform,
+          "-t", versionTag,
+          "-t", latestTag,
+          "-f", dockerfile.getAbsolutePath,
+          dockerfile.getParentFile.getAbsolutePath
+        )
+      )
+      if (buildCmd.! != 0) {
+        sys.error(s"Docker build failed for $versionTag")
+      }
+      log.info(s"Successfully built $versionTag and $latestTag")
+    },
+    dockerPushWpCli := {
+      dockerBuildWpCli.value
+      val log = streams.value.log
+      val versionTag = s"$dockerHubUser/${imagePrefix}wp-cli-image:$appVersion"
+      val latestTag = s"$dockerHubUser/${imagePrefix}wp-cli-image:latest"
+
+      log.info(s"Pushing $versionTag to Docker Hub...")
+      if (Process(Seq("docker", "push", versionTag)).! != 0) {
+        sys.error(s"Docker push failed for $versionTag")
+      }
+      log.info(s"Pushing $latestTag to Docker Hub...")
+      if (Process(Seq("docker", "push", latestTag)).! != 0) {
+        sys.error(s"Docker push failed for $latestTag")
+      }
+      log.info(s"Successfully pushed $versionTag and $latestTag")
+    },
+    dockerBuildWp := {
+      val log = streams.value.log
+      val env = getAppEnv
+      val dockerDir = getDockerDir(baseDirectory.value, env)
+      val versionTag = s"$dockerHubUser/${imagePrefix}wp-image:$appVersion"
+      val latestTag = s"$dockerHubUser/${imagePrefix}wp-image:latest"
+      val dockerfile = dockerDir / "wordpress" / "Dockerfile"
+
+      log.info(s"Building Docker image $versionTag for platform $dockerPlatform...")
+      val buildCmd = Process(
+        Seq(
+          "docker", "build",
+          "--platform", dockerPlatform,
+          "-t", versionTag,
+          "-t", latestTag,
+          "-f", dockerfile.getAbsolutePath,
+          dockerfile.getParentFile.getAbsolutePath
+        )
+      )
+      if (buildCmd.! != 0) {
+        sys.error(s"Docker build failed for $versionTag")
+      }
+      log.info(s"Successfully built $versionTag and $latestTag")
+    },
+    dockerPushWp := {
+      dockerBuildWp.value
+      val log = streams.value.log
+      val versionTag = s"$dockerHubUser/${imagePrefix}wp-image:$appVersion"
+      val latestTag = s"$dockerHubUser/${imagePrefix}wp-image:latest"
+
+      log.info(s"Pushing $versionTag to Docker Hub...")
+      if (Process(Seq("docker", "push", versionTag)).! != 0) {
+        sys.error(s"Docker push failed for $versionTag")
+      }
+      log.info(s"Pushing $latestTag to Docker Hub...")
+      if (Process(Seq("docker", "push", latestTag)).! != 0) {
+        sys.error(s"Docker push failed for $latestTag")
+      }
+      log.info(s"Successfully pushed $versionTag and $latestTag")
+    },
+    dockerBuildImages := {
+      dockerBuildPlaysrv.value
+      dockerBuildWpCli.value
+      dockerBuildWp.value
+    },
+    dockerPushImages := {
+      dockerPushPlaysrv.value
+      dockerPushWpCli.value
+      dockerPushWp.value
+    }
+  )
+  .enablePlugins(PlayScala)
+  .enablePlugins(SbtWeb)
+  .dependsOn(shared.jvm)
+
+lazy val client = project
+  .settings(
+    (Compile / unmanagedSources / excludeFilter) := {         
+      val baseFilter = HiddenFileFilter || "*~" || "*.tmp"
+    
+      if (includeAddon) {
+        baseFilter
+      } else {
+        baseFilter || new SimpleFileFilter(file =>
+          file.getAbsolutePath.contains("src/main/scala/addon")
+        )
+      }
+    },
+
+    Compile / sourceGenerators += Def.task {
+      val out = (Compile / sourceManaged).value / "AddonConfig.scala"
+      val code =
+        if (includeAddon)
+          """package addon
+            |object Console { 
+            |  val enabled = true
+            |  def start() = DebugConsole.start()
+            |}
+            |""".stripMargin          
+
+        else
+          """package addon
+            |object Console { 
+            |  val enabled = false
+            |  def start() = println("debug console not available")
+            |}
+            |""".stripMargin          
+
+      IO.write(out, code)
+      Seq(out)
+    },
+
+    scalaJSUseMainModuleInitializer := false,
+    scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.ESModule) }, 
+    libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "2.8.0",
+    libraryDependencies += "com.lihaoyi" %%% "upickle" % "3.3.1",
+    libraryDependencies += "org.rogach"  %%% "scallop" % "5.1.0",
+    libraryDependencies += "org.typelevel" %%% "cats-core" % "2.12.0",
+    libraryDependencies += "com.lihaoyi" %%% "sourcecode" % "0.4.2"
+  )
+  .enablePlugins(ScalaJSPlugin, ScalaJSWeb)
+  .dependsOn(shared.js)
+  .enablePlugins(SbtTwirl)
+
+lazy val shared = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Pure).in(file("shared"))
+  .settings(
+     name := "shared",
+     Compile / sourceGenerators += Def.task {
+       val file = (Compile / sourceManaged).value / "shared" / "AppVersion.scala"
+       val parts = appVersion.split('.')
+       val maj = if (parts.length > 0) scala.util.Try(parts(0).toInt).getOrElse(1) else 1
+       val min = if (parts.length > 1) scala.util.Try(parts(1).toInt).getOrElse(0) else 0
+       val pat = if (parts.length > 2) scala.util.Try(parts(2).toInt).getOrElse(0) else 0
+       IO.write(file,
+         s"""package shared
+            |
+            |/**
+            | * Automatisch generierte Versionsinformationen gemäß SemVer MAJOR.MINOR.PATCH.
+            | */
+            |object AppVersion:
+            |  val major: Int = $maj
+            |  val minor: Int = $min
+            |  val patch: Int = $pat
+            |  val version: String = "${appVersion}"
+            |""".stripMargin
+       )
+       Seq(file)
+     },
+     libraryDependencies ++= Seq(
+       "com.lihaoyi" %%% "upickle" % "3.3.1",
+       "com.lihaoyi" %% "upickle" % "3.3.1",
+       "org.typelevel" %%% "shapeless3-deriving" % "3.4.0",
+       "com.lihaoyi" %%% "sourcecode" % "0.4.2",
+       "com.lihaoyi" %% "sourcecode" % "0.4.2",
+       "org.typelevel" %%% "cats-core" % "2.13.0"
+     )
+   )
+  .jsConfigure(_.enablePlugins(ScalaJSWeb))
+
+Global / onLoad := (Global / onLoad).value.andThen(state => "project server" :: state)
+
+def hello = Command.command("hello") { state =>
+  println(s"Hello")
+  state
+}
+
+def buildMsg = Command.command("buildMsg") { state =>
+  println("--- Starte Nachrichten-Generierung ---")
+  val state1 = Command.process("genMsgFiles", state)
+  val state2 = Command.process("convertMessagesToJson", state1)
+  println("--- Nachrichten-Generierung abgeschlossen ---")
+  state2
+}
+
+addCommandAlias("packageWp", "packageWpPlugin")
+addCommandAlias("packagePlugin", "packageWpPlugin")
+

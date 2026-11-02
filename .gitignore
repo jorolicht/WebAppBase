@@ -1,0 +1,62 @@
+# IDE / OS
+.classpath
+.project
+.settings
+.DS_Store
+.bloop
+.bsp
+.metals
+.history
+.vscode
+.idea
+
+# Lokale Notizen
+doc
+
+# Build-Ausgaben
+target
+project/project
+project/target
+project/metals.sbt
+server/target
+shared/.js
+shared/.jvm
+
+# Generierte Nachrichtendateien (sbt buildMsg)
+server/conf/messages.de
+server/conf/messages.en
+server/conf/messages.de_json
+server/conf/messages.en_json
+server/conf/messages/de/00_info.de
+server/conf/messages/en/00_info.en
+server/public/data
+
+# Vom Build ins Plugin kopierte Dateien (sbt compile) und Composer-Abhängigkeiten
+wp-plugin/data
+wp-plugin/js
+wp-plugin/pages
+wp-plugin/vendor
+
+# Docker: Laufzeitdaten, Zertifikate, Logs, Backups, gestagter Play-Server
+server/docker/*/wp_data
+server/docker/*/db_data
+server/docker/*/logs
+server/docker/*/certs
+server/docker/*/backups
+server/docker/*/registry
+server/docker/*/acme.json
+server/docker/*/playsrv/stage
+server/docker/*/playsrv/server*
+
+# Temporäre Dateien
+*.zip
+.~*
+*~
+*.orig
+
+# Env-Dateien mit Zugangsdaten nie einchecken (nur Vorlagen *.env.example ohne echte Werte)
+.env
+.env.*
+.env_*
+*.env
+!.env.example

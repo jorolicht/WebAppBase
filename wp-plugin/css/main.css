@@ -1,0 +1,92 @@
+/* bootstrap extension */
+.btn-xs, .btn-group-xs > .btn {
+  padding: 0.15rem 0.25rem;
+  font-size: 0.6rem;
+  line-height: 1.5;
+  border-radius: 0.2rem;
+}
+
+.btn-xxs, .btn-group-xxs > .btn {
+  padding: 0.1rem 0.1rem;
+  font-size: 0.5rem;
+  line-height: 1.2;
+  border-radius: 0.1rem;
+}
+
+
+/* Sidebar Styling - HIDDEN */
+aside {
+  display: none !important;
+}
+
+/* Navbar height reduction */
+.navbar {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+}
+
+.navbar-brand {
+    padding-top: 0.15rem !important;
+    padding-bottom: 0.15rem !important;
+}
+
+.navbar-nav .nav-link {
+    padding-top: 0.4rem !important;
+    padding-bottom: 0.4rem !important;
+}
+
+/* Multi-level dropdown menus */
+.dropdown-submenu {
+    position: relative;
+}
+
+.dropdown-submenu .dropdown-menu {
+    top: 0;
+    left: 100%;
+    margin-top: -1px;
+}
+
+.dropdown-submenu:hover > .dropdown-menu {
+    display: block;
+}
+
+/* Untermenüs */
+.submenu1 {
+  padding-left: 15px;
+}
+
+
+/* Header Styling */
+header {
+  width: 100%;
+  background-color: #6886a6;
+  color: white;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Hauptinhalt Styling */
+.content {
+  flex-grow: 1;
+  padding: 20px;
+}
+/* Responsive Anpassung */
+@media (max-width: 768px) {
+  }
+  aside {
+      width: 100%;
+      height: auto;
+      position: static;
+  }
+}
+
+/* MainView (Startseite) */
+/* Footer folgt direkt dem Inhalt, statt am unteren Fensterrand zu kleben */
+#Main_ContentId:has(> .main-multi-landing) { flex-grow: 0 !important; }
+#Main_AppWrapper:has(.main-multi-landing) .footer { margin-top: 0 !important; }
+
+/* Karten-Buttons: Farbe kommt aus config/app.json (style), Hover/Active abdunkeln */
+.btn-mv:hover, .btn-mv:focus { filter: brightness(0.92); }
+.btn-mv:active { filter: brightness(0.85); }

@@ -1,0 +1,1 @@
+{"mail":{"mailer":"smtp","from_email":"info@example.com","from_name":"WebAppBase","from_email_force":true,"from_name_force":true},"smtp":{"host":"smtp.example.com","port":465,"encryption":"ssl","auth":true,"user":"info@example.com","pass":""},"general":{"summary_report_email_disabled":true}}

@@ -1,0 +1,57 @@
+{
+  "brand": { "de": "WebAppBase", "en": "WebAppBase" },
+  "hero": [
+    { "de": "Willkommen bei WebAppBase", "en": "Welcome to WebAppBase" },
+    { "de": "Vorlage für Web-Anwendungen auf Basis von WordPress", "en": "Template for web applications based on WordPress" },
+    { "de": "Menüs, Karten und statische Seiten werden über wp-plugin/config/app.json konfiguriert.", "en": "Menus, cards and static pages are configured in wp-plugin/config/app.json." }
+  ],
+  "menu": [
+    { "id": "features", "label": { "de": "Funktionen", "en": "Features" }, "action": "static:features" },
+    { "id": "pricing",  "label": { "de": "Preise", "en": "Pricing" }, "action": "static:pricing" },
+    { "id": "data", "label": { "de": "Daten", "en": "Data" }, "icon": "bi-database",
+      "children": [
+        { "id": "dataList",   "label": { "de": "Übersicht", "en": "Overview" }, "icon": "bi-list-ul",
+          "desc": { "de": "Platzhalter für eine Liste von Datensätzen.", "en": "Placeholder for a list of records." } },
+        { "id": "dataNew",    "label": { "de": "Neu anlegen", "en": "Create new" }, "icon": "bi-plus-circle", "visible": "user",
+          "desc": { "de": "Platzhalter für ein Formular zum Anlegen.", "en": "Placeholder for a create form." } },
+        { "id": "dataImport", "label": { "de": "Importieren", "en": "Import" }, "icon": "bi-upload", "visible": "user",
+          "action": "dialog:Import ist noch nicht umgesetzt." }
+      ] },
+    { "id": "help", "label": { "de": "Hilfe", "en": "Help" }, "icon": "bi-question-circle",
+      "children": [
+        { "id": "helpDocs",    "label": { "de": "Dokumentation", "en": "Documentation" }, "icon": "bi-book" },
+        { "id": "helpContact", "label": { "de": "Kontakt", "en": "Contact" }, "icon": "bi-envelope", "action": "static:contact" },
+        { "id": "helpWp",      "label": { "de": "WordPress", "en": "WordPress" }, "icon": "bi-wordpress", "action": "url:https://wordpress.org" }
+      ] }
+  ],
+  "cards": [
+    { "id": "cardDemo",   "title": { "de": "Demo", "en": "Demo" }, "icon": "bi-play-circle", "color": "#E6CA83",
+      "desc": { "de": "Beispielkarte, öffnet eine Mockup-Seite.", "en": "Sample card, opens a mockup page." },
+      "btn":  { "de": "Demo starten", "en": "Start demo" } },
+    { "id": "cardData",   "title": { "de": "Daten", "en": "Data" }, "icon": "bi-database", "color": "#4A607A",
+      "desc": { "de": "Beispielkarte, öffnet die Mockup-Seite des Menüpunkts Übersicht.", "en": "Sample card, opens the mockup page of the menu item Overview." },
+      "btn":  { "de": "Übersicht", "en": "Overview" }, "action": "page:Mockup:dataList" },
+    { "id": "cardLogin",  "title": { "de": "Anmelden", "en": "Login" }, "icon": "bi-person-circle", "color": "#A3B8CC",
+      "desc": { "de": "Anmeldung mit E-Mail/Passwort oder Passkey.", "en": "Login with email/password or passkey." },
+      "btn":  { "de": "Zur Anmeldung", "en": "Go to login" }, "action": "page:UserLogin" },
+    { "id": "cardInfo",   "title": { "de": "Funktionen", "en": "Features" }, "icon": "bi-info-circle", "color": "#8A9A86",
+      "desc": { "de": "Statische Seite aus site/content.", "en": "Static page from site/content." },
+      "btn":  { "de": "Mehr erfahren", "en": "Learn more" }, "action": "static:features" }
+  ],
+  "staticPages": [
+    { "file": "features",  "slug": { "de": "funktionen", "en": "features" },  "title": { "de": "Funktionen", "en": "Features" },
+      "desc": { "de": "Funktionen von WebAppBase.", "en": "Features of WebAppBase." } },
+    { "file": "pricing",   "slug": { "de": "preise", "en": "pricing" },        "title": { "de": "Preise", "en": "Pricing" },
+      "desc": { "de": "Preise und Support.", "en": "Pricing and support." } },
+    { "file": "history",   "slug": { "de": "historie", "en": "history" },      "title": { "de": "Versionshistorie", "en": "Version History" },
+      "desc": { "de": "Neuerungen aller Versionen.", "en": "What is new in every release." }, "footer": true },
+    { "file": "impressum", "slug": { "de": "impressum", "en": "imprint" },     "title": { "de": "Impressum", "en": "Imprint" },
+      "desc": { "de": "Impressum und Anbieterkennzeichnung.", "en": "Imprint and legal notice." }, "footer": true },
+    { "file": "privacy",   "slug": { "de": "datenschutz", "en": "privacy" },   "title": { "de": "Datenschutzerklärung", "en": "Privacy Policy" },
+      "desc": { "de": "Welche Daten verarbeitet werden.", "en": "Which data is processed." }, "footer": true },
+    { "file": "contact",   "slug": { "de": "kontakt", "en": "contact" },       "title": { "de": "Kontakt", "en": "Contact" },
+      "desc": { "de": "Kontakt und Support.", "en": "Contact and support." }, "footer": true },
+    { "file": "gtc",       "slug": { "de": "agb", "en": "terms" },             "title": { "de": "Allgemeine Geschäftsbedingungen", "en": "Terms and Conditions" },
+      "desc": { "de": "Allgemeine Geschäftsbedingungen.", "en": "Terms and conditions." }, "footer": true }
+  ]
+}
